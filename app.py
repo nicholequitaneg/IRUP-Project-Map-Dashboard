@@ -1,4 +1,6 @@
 import io
+import hmac
+import time
 import os
 import pandas as pd
 import streamlit as st
@@ -12,6 +14,46 @@ import requests
 from streamlit_folium import st_folium
 
 st.set_page_config(page_title="IRUP Project Map", page_icon="🗺️", layout="wide")
+
+# ---------------- Login (single shared account) ----------------
+def require_login():
+    """Blocks the whole app until the correct username/password (from st.secrets) is entered."""
+    try:
+        want_user = str(st.secrets["auth"]["username"])
+        want_pass = str(st.secrets["auth"]["password"])
+    except Exception:
+        st.error("Login is not configured. Add an [auth] section with username and password to the app's "
+                 "secrets (see .streamlit/secrets.toml.example). The app stays locked until this is set.")
+        st.stop()
+
+    if st.session_state.get("authed"):
+        if st.sidebar.button("Log out"):
+            st.session_state["authed"] = False
+            st.rerun()
+        return
+
+    st.title("🔒 IRUP Project Map")
+    if st.session_state.get("fails", 0) >= 5:
+        st.error("Too many wrong attempts. Refresh the page to try again.")
+        st.stop()
+    with st.form("login"):
+        user = st.text_input("Username")
+        pw = st.text_input("Password", type="password")
+        go = st.form_submit_button("Log in")
+    if go:
+        ok_user = hmac.compare_digest(user.encode(), want_user.encode())
+        ok_pass = hmac.compare_digest(pw.encode(), want_pass.encode())
+        if ok_user and ok_pass:
+            st.session_state["authed"] = True
+            st.session_state["fails"] = 0
+            st.rerun()
+        else:
+            st.session_state["fails"] = st.session_state.get("fails", 0) + 1
+            time.sleep(1)
+            st.error("Wrong username or password.")
+    st.stop()
+
+require_login()
 
 st.title("🗺️ IRUP Project Mapping & Status Dashboard")
 st.caption("Interactive map and filters powered by your IRUP SITELIST Excel sheet.")

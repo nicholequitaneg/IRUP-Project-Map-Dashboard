@@ -21,3 +21,8 @@
 - The app reads the workbook; it does not write changes back to Excel.
 - This is an initial MVP. Confirm the status color rules and any milestone/progress conventions before relying on them for formal reporting.
 - Keep the Excel workbook structure and sheet name `IRUP SITELIST` unchanged for best results.
+
+LOGIN
+- The app is locked until a username/password is set in secrets (see .streamlit/secrets.toml.example).
+- Local: copy it to .streamlit/secrets.toml and edit. Streamlit Cloud: App > Settings > Secrets, paste the [auth] block.
+- Never upload secrets.toml to GitHub (.gitignore already excludes it).
